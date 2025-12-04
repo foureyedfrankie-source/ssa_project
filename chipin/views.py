@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from .models import Group, GroupJoinRequest, Comment, Event
 from .forms import GroupCreationForm, CommentForm
 from users.models import Transaction
+from decimal import Decimal, InvalidOperation
 @login_required
 def home(request):
     # gets the transactions and orders them by date 
