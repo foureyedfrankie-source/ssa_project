@@ -1,0 +1,100 @@
+{% extends 'chipin/base.html' %}
+{% load static %}
+{% block title %}ChipIn{% endblock %}
+{% block content %}
+<table style="width:100%">
+<tr><td colspan=2><h1> Welcome to Chipin, {{ user.first_name }}</h1></td></tr>
+<tr>
+<td><h2>Account</h2></td>
+<td><h2>Groups</h2></td>
+</tr>
+<tr>
+<td style="vertical-align: top; width:400px; padding:20px"> 
+    <p>Your current balance: ${{ balance }} (<a href="{% url 'users:top_up' user.id %}"> Top Up Balance</a>)</p>
+    <p>You max spend: ${{ max_spend }}</p>
+    <p><strong>Transactions</strong></p>
+    <div style="max-height: 300px; overflow-y: auto; margin-bottom: 16px;">
+        <table style="border-collapse: collapse; width: 100%;">
+            <thead>
+                <tr>
+                    <th style="border-bottom: 1px solid #ccc; text-align: left; padding: 8px;">
+                        Date
+                    </th>
+                    <th style="border-bottom: 1px solid #ccc; text-align: left; padding: 8px;">
+                        Amount
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions %}
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                            {{ tx.created_at }}
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                            {{ tx.amount }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" style="padding: 8px;">
+                            No transactions to display.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</td>
+<td style="vertical-align: top; padding:20px">
+    <p><strong>Your Groups</strong> <a href="{% url 'chipin:create_group' %}">(Create Group)</a></p>
+    <ul>
+        {% for group in user.group_memberships.all %}
+        <li>
+            <a href="{% url 'chipin:group_detail' group.id %}">{{ group.name }}</a>
+            {% if group.admin == request.user %}
+                <a href="{% url 'chipin:delete_group' group.id %}" onclick="return confirm('Delete this group?');">Delete</a>
+            {% else %}
+                <a href="{% url 'chipin:leave_group' group.id %}" onclick="return confirm('Leave this group?');">Leave</a>
+            {% endif %}
+        </li>
+        {% empty %}
+        <li>You are not a member of any groups yet.</li>
+        {% endfor %}
+    </ul>
+    <p><strong>Group Invitations</strong></p>
+    <ul>
+    {% for group in pending_invitations %}
+        <li>
+            You have been invited to join <strong>{{ group.name }}</strong>.
+            <a href="{% url 'chipin:accept_invite' group.id %}?user_id={{ request.user.id }}">Accept</a>
+        </li>
+        {% empty %}
+            <li>No  group invitations.</li>
+        {% endfor %}
+    </ul>
+    <p><strong>Your Join Requests</strong></p>
+    <ul>
+        {% for join_request in user_join_requests %}
+        <li>
+            You requested to join <strong>{{ join_request.group.name }}</strong> on {{ join_request.created_at }}.
+            <a href="{% url 'chipin:delete_join_request' join_request.id %}" onclick="return confirm('Delete this join request?');">Delete</a>
+        </li>
+        {% empty %}
+        <li>You have not submitted any join requests.</li>
+        {% endfor %}
+    </ul>
+    <p><strong>Avaliable Groups to Join</strong></p>
+    <ul>
+        {% for group in available_groups %}
+        <li>
+            <a href="{% url 'chipin:group_detail' group.id %}">{{ group.name }}</a>
+            <span>- Admin: {{ group.admin.profile.nickname }}</span>
+        </li>
+        {% empty %}
+        <li>No groups available to join.</li>
+        {% endfor %}
+    </ul>
+</td>
+</tr></table>
+{% endblock %}
