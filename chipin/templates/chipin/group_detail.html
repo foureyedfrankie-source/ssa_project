@@ -1,16 +1,76 @@
 {% extends 'chipin/base.html' %}
 {% block title %}{{ group.name }}{% endblock %}
+  
+
+  <!-- Comment form (used for both new comments and editing existing comments) -->
+  <h3>{% if comment_to_edit %}Edit Comment{% else %}Add a comment{% endif %}</h3>
+  <form method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+          {{ form.content.errors }}
+          {{ form.content }}
+      </div>
+      <button type="submit">{% if comment_to_edit %}Save Comment{% else %}Post Comment{% endif %}</button>
+  </form>
 {% block content %}
-  <h1>{{ group.name }}</h1>
-  <p>Administrator: {{ group.admin.profile.nickname }}</p>
-
-  <!-- Only the admin sees "Invite Users" -->
-  {% if request.user == group.admin %}
-    <a href="{% url 'chipin:invite_users' group.id %}">Invite Users</a>
-  {% endif %}
-
-  <h2>Members</h2>
+<table style="width:100%">
+<tr><td colspan=2><h1>{{ group.name }}</h1></td></tr>
+<tr>
+<td><h2>Information</h2></td>
+<td><h2>Members</h2></td>
+</tr>
+<tr>
+<td style="vertical-align: top; width:500px; padding:20px"> 
+    <!-- Display existing comments -->
+  <div class="comments-section">
+    <div style="max-height: 300px; overflow-y: auto; margin-bottom: 16px;">
+        <table style="border-collapse: collapse; width: 100%;">
+            <tbody>
+                {% for comment in comments %}
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                            {{ comment.content }} {{ comment.user.profile.nickanme }}
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                            {{ comment.created_at }}
+                            {% if comment.user == request.user or request.user == group.admin %}
+                                <a href="{% url 'chipin:edit_comment' group.id comment.id %}">Edit</a>
+                                <a href="{% url 'chipin:delete_comment' comment.id %}" onclick="return confirm('Are you sure?')">Delete</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" style="padding: 8px;">
+                            No comments yet. Be the first to comment!
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+      <!-- Comment form (used for both new comments and editing existing comments) -->
+    <h3>{% if comment_to_edit %}Edit Comment{% else %}Add a comment{% endif %}</h3>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            {{ form.content.errors }}
+            {{ form.content }}
+        </div>
+        <button type="submit">{% if comment_to_edit %}Save Comment{% else %}Post Comment{% endif %}</button>
+    </form>
+  </div>
+</td>
+<td style="vertical-align: top; padding:20px">
   <ul>
+      <p><strong>Administrator: {{ group.admin.profile.nickname }}</strong></p>
+      <!-- Only the admin sees "Invite Users" -->
+      {% if request.user == group.admin %}
+        <a href="{% url 'chipin:invite_users' group.id %}">Invite Users</a>
+      {% endif %}
+  </ul>
+  <ul>
+
     {% for member in group.members.all %}
       <li>{{ member.profile.nickname }}</li>
     {% empty %}
@@ -23,38 +83,9 @@
     <a href="{% url 'chipin:request_to_join_group' group.id %}">Request to Join</a>
   {% endif %}
 
-<h2>Group Chat</h2>
-  <!-- Display existing comments -->
-  <div class="comments-section">
-      {% for comment in comments %}
-          <div class="comment">
-              <p><strong>{{ comment.user.profile.nickname }}</strong>: {{ comment.content }}</p>
-              <small>Posted on {{ comment.created_at }}</small>
-              <!-- Allow the comment owner or admin to edit or delete -->
-              {% if comment.user == request.user or request.user == group.admin %}
-                  <a href="{% url 'chipin:edit_comment' group.id comment.id %}">Edit</a>
-                  <a href="{% url 'chipin:delete_comment' comment.id %}" onclick="return confirm('Are you sure?')">Delete</a>
-              {% endif %}
-          </div>
-      {% empty %}
-          <p>No comments yet. Be the first to comment!</p>
-      {% endfor %}
-  </div>
-
-  <!-- Comment form (used for both new comments and editing existing comments) -->
-  <h3>{% if comment_to_edit %}Edit Comment{% else %}Add a comment{% endif %}</h3>
-  <form method="POST">
-      {% csrf_token %}
-      <div class="form-group">
-          {{ form.content.errors }}
-          {{ form.content }}
-      </div>
-      <button type="submit">{% if comment_to_edit %}Save Comment{% else %}Post Comment{% endif %}</button>
-  </form>
-
   <!-- Join Requests: show only to members (including admin) -->
   {% if request.user in group.members.all %}
-    <h2>Join Requests</h2>
+    <h3>Join Requests</h3>
     <ul>
       {% for jr in group.join_requests.all %}
         <li>
@@ -70,7 +101,7 @@
     </ul>
   {% endif %}
   
-      <h2>Group Events</h2>
+    <h3>Group Events</h3>
     <!-- Only display "Create New Event" link to the group administrator -->
     {% if request.user == group.admin %}
         <a href="{% url 'chipin:create_event' group.id %}" class="btn btn-primary">Create New Event</a>
@@ -105,4 +136,6 @@
             </li>
         {% endfor %}
     </ul>
+</td>
+</tr></table>
 {% endblock %}
